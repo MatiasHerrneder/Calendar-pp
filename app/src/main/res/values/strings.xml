@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Calendar++</string>
+    <string name="tareasFinalizadas">%d tareas finalizadas!</string>
 </resources>

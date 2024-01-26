@@ -1,36 +1,90 @@
 package com.matiasherrneder.calendar
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.matiasherrneder.calendar.ui.theme.CalendarTheme
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.matiasherrneder.calendar.databinding.ActivityMainBinding
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var activityMainBind: ActivityMainBinding
+    private lateinit var listaAdapter: ListaAdapter
+
+    private val agregarTareaResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data: Intent? = result.data
+            val titl = data?.getStringExtra("titulo")
+            val desc = data?.getStringExtra("descripcion")
+            if (titl != null && desc != null) listaAdapter.agregarItemLista(ItemLista(titl, desc))
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-    }
-}
 
-//@Composable
-//fun Greeting(name: String, modifier: Modifier = Modifier) {
-//    Text(
-//        text = "Hello $name!",
-//        modifier = modifier
-//    )
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    CalendarTheme {
-//        Greeting("Android")
-//    }
-//}
+        activityMainBind = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(activityMainBind.root)
+        listaAdapter = ListaAdapter(mutableListOf(), this)
+        activityMainBind.rvItems.adapter = listaAdapter
+        activityMainBind.rvItems.layoutManager = LinearLayoutManager(this)
+
+        activityMainBind.bAgregar.setOnClickListener {
+            val intent = Intent(this, AgregarTarea::class.java)
+            agregarTareaResultLauncher.launch(intent)
+        }
+
+        activityMainBind.bListo.setOnClickListener {
+            var cantFinalizadas = 0
+            listaAdapter.leerLista()
+            listaAdapter.let {
+                for (i in 0 until it.itemCount) {
+                    val vh = activityMainBind.rvItems.findViewHolderForAdapterPosition(i) as? ListaAdapter.ListaViewHolder
+                    vh?.let { viewHolder ->
+                        if (viewHolder.binding.cbCheck.isChecked) {
+                            it.finalizarItemLista(i)
+                            cantFinalizadas++
+                        }
+                    }
+                }
+            }
+            animarFinalizarTareas(cantFinalizadas)
+            listaAdapter.finalizarTareas()
+            mostrarBotonFinalizar(false)
+        }
+    }
+
+    fun animarFinalizarTareas(cantTareas: Int) {
+        finish()
+        val intent = Intent(this, AnimacionTareaLista::class.java)
+        intent.putExtra("cantidadFinalizadas", cantTareas)
+        startActivity(intent)
+    }
+
+    fun mostrarBotonFinalizar(mostrar :Boolean = true) {
+        if (mostrar) {
+            activityMainBind.bListo.visibility = View.VISIBLE
+            activityMainBind.bAgregar.visibility = View.GONE
+        }
+        else {
+            activityMainBind.bListo.visibility = View.GONE
+            activityMainBind.bAgregar.visibility = View.VISIBLE
+        }
+    }
+
+    fun ningunoCheckeado(): Boolean {
+        activityMainBind.rvItems.adapter.let { listaAdapter ->
+            if (listaAdapter != null) {
+                for (i in 0 until listaAdapter.itemCount) {
+                    val viewHolder = activityMainBind.rvItems.findViewHolderForAdapterPosition(i) as? ListaAdapter.ListaViewHolder
+                    if (viewHolder?.binding?.cbCheck?.isChecked == true) return false
+                }
+            }
+        }
+        return true
+    }
+
+}
