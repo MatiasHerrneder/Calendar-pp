@@ -1,12 +1,8 @@
 package com.matiasherrneder.calendar
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.CheckBox
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.recyclerview.widget.RecyclerView
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -87,6 +83,21 @@ class ListaAdapter(
         actualizarLista()
     }
 
+    fun actualizarItemLista(id: Int, titulo: String, descripcion: String, terminada: Boolean) {
+        val file = File(context.filesDir, nombreFil)
+        var item = lista[id]
+        if (titulo != "") item.titulo = titulo
+        if (descripcion != "") item.descripcion = descripcion
+        if (terminada != item.terminada) item.terminada = !item.terminada
+        lista.saveToFile(file)
+        actualizarLista()
+    }
+
+    private fun verTarea(item: ItemLista) {
+        leerLista() //para actualizar bien al cerrar la actividad
+        pap.crearActividadVerTarea(item, lista.indexOf(item))
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ListaViewHolder {
         val binding = ItemTareaBinding.inflate(
             LayoutInflater.from(parent.context),
@@ -94,13 +105,6 @@ class ListaAdapter(
             false
         )
         return ListaViewHolder(binding)
-    }
-
-    private fun verTarea(item: ItemLista) {
-        val intent = Intent(context, VerTarea::class.java)
-        intent.putExtra("titulo", item.titulo)
-        intent.putExtra("descripcion", item.descripcion)
-        context.startActivity(intent)
     }
 
     override fun onBindViewHolder(holder: ListaViewHolder, position: Int) {

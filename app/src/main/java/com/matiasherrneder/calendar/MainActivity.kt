@@ -23,6 +23,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val verTareaResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val data: Intent? = result.data
+            var titulo = data?.getStringExtra("titulo")
+            var descripcion = data?.getStringExtra("descripcion")
+            val terminada = data?.getBooleanExtra("terminada", false)
+            val id = data?.getIntExtra("id", -1)
+            if (titulo == null) titulo = ""
+            if (descripcion == null) descripcion = ""
+            if (id != null && terminada != null) {
+                listaAdapter.actualizarItemLista(id, titulo, descripcion, terminada)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -55,6 +70,14 @@ class MainActivity : ComponentActivity() {
             listaAdapter.finalizarTareas()
             mostrarBotonFinalizar(false)
         }
+    }
+
+    fun crearActividadVerTarea(item: ItemLista, pos: Int) {
+        val intent = Intent(this, VerTarea::class.java)
+        intent.putExtra("titulo", item.titulo)
+        intent.putExtra("descripcion", item.descripcion)
+        intent.putExtra("id", pos)
+        verTareaResultLauncher.launch(intent)
     }
 
     fun animarFinalizarTareas(cantTareas: Int) {
